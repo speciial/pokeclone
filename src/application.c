@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 #define GLAD_GL_IMPLEMENTATION 
@@ -8,6 +9,23 @@
 
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 640
+
+static void readFullFile(const char *fileName, char **fileContent) 
+{
+    char *result;
+    FILE *file;
+    fopen_s(&file, fileName, "rb");
+    fseek(file, 0, SEEK_END);
+    int64_t fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    result = (char *)malloc(fileSize + 1);
+    fread(result, fileSize, 1, file);
+    fclose(file);
+
+    result[fileSize] = 0;
+    *fileContent = result;
+}
 
 int main()
 {
@@ -35,20 +53,11 @@ int main()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // compile shader
-    // TODO(speciial): load shaders from file
-    const char *vertexShaderSource = "#version 460 core\n"
-        "layout (location = 0) in vec3 aPosition;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vec4(aPosition, 1.0f);\n"
-        "}\n"; 
+    char *vertexShaderSource = 0;
+    readFullFile("../data/shaders/vertex.glsl", &vertexShaderSource);
 
-    const char *fragmentShaderSource = "#version 460 core\n"
-        "out vec4 fragmentColor;\n"
-        "void main()\n"
-        "{\n"
-        "   fragmentColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}\n";
+    char *fragmentShaderSource = 0;
+    readFullFile("../data/shaders/fragment.glsl", &fragmentShaderSource);
 
     uint32_t vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
