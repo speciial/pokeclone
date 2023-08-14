@@ -2,6 +2,14 @@
 
 Pokeclone is a small project where I implement a Pokemon (specifically the FireRed/LeafGreen versions) clone in C. This project will make use of a couple libraries to create windows and set up a rendering context for OpenGL. Other than that though, there won't be many dependencies since this project is meant as a programming exercise. 
 
+## About the Clone
+
+The original resolution of the GBA is 240x160 pixels. For a regular HD screen, this is a little to small so the clone will be scaled up by a factore of 4. This means the window is now 960x640 pixel, a block is 64x64 pixel, and a tile is 32x32 pixel.
+
+## About the Code
+
+As of writing this, I don't really have a "style" of programming in C that I'm comfortable with. In part, this is why I'm working on this project. 
+
 ## Building and Running the Program
 
 ### Clone the Repo
