@@ -8,6 +8,6 @@ set link=../third_party/glfw/build/src/Release/glfw3.lib opengl32.lib gdi32.lib 
 
 pushd build
 
-cl /nologo /FC /Zi /MD %warnings% ..\src\application.c %includes% %link%
+cl /nologo /FC /Zi /MD /std:c17 %warnings% ..\src\application.c %includes% %link%
 
 popd

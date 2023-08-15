@@ -10,8 +10,24 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "TextureAtlasInfo.h"
+
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 640
+
+uint32_t TILE_MAP[15 * 10] = 
+{
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0
+};
 
 typedef struct
 {
@@ -112,23 +128,32 @@ createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
 }
 
 static QuadMesh 
-createQuadMesh(float x, float y, float width, float height, RGBColor color)
+createQuadMesh(float x, float y, float width, float height, RGBColor color, TextureID texID)
 {
     // STUDY(speciial): creating new vaos and drawing them individually in separate draw calls
     //                  is definitely not the most optimal way of rendering 2D quads. It's 
     //                  probably a good idea to batch the render data into a single draw call.
     //                  I could either look into how instancing works, or construct the vertex
     //                  data myself and update it.
+    float textureAtalWidth = 640.0f;
+    float textureAtalHeight = 640.0f;
+
+    Sprite sprite = getSprite(texID);
+
+    float uvMinX = (float)(sprite.offset.x) / textureAtalWidth;
+    float uvMaxX = (float)(sprite.offset.x + sprite.size.x) / textureAtalWidth;
+    float uvMinY = (float)(sprite.offset.y) / textureAtalHeight;
+    float uvMaxY = (float)(sprite.offset.y + sprite.size.y) / textureAtalHeight;
 
     float vertices[] = 
     {
-                x,           y, 0.0f, color.r, color.g, color.b, 0.0f, 0.0f, // bottom left
-        x + width,  y + height, 0.0f, color.r, color.g, color.b, 1.0f, 1.0f, // top right
-                x,  y + height, 0.0f, color.r, color.g, color.b, 0.0f, 1.0f, // top left
+                x,           y, 0.0f, color.r, color.g, color.b, uvMinX, uvMinY, // bottom left
+        x + width,  y + height, 0.0f, color.r, color.g, color.b, uvMaxX, uvMaxY, // top right
+                x,  y + height, 0.0f, color.r, color.g, color.b, uvMinX, uvMaxY, // top left
     
-                x,           y, 0.0f, color.r, color.g, color.b, 0.0f, 0.0f, // bottom left
-        x + width,           y, 0.0f, color.r, color.g, color.b, 1.0f, 0.0f, // bottom right
-        x + width,  y + height, 0.0f, color.r, color.g, color.b, 1.0f, 1.0f  // top right 
+                x,           y, 0.0f, color.r, color.g, color.b, uvMinX, uvMinY, // bottom left
+        x + width,           y, 0.0f, color.r, color.g, color.b, uvMaxX, uvMinY, // bottom right
+        x + width,  y + height, 0.0f, color.r, color.g, color.b, uvMaxX, uvMaxY  // top right 
     };
 
     uint32_t vao;
@@ -198,6 +223,7 @@ int main()
     {
         printf("Failed to load glad.");
     }
+    glfwSwapInterval(1);
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // compile shader
@@ -211,10 +237,9 @@ int main()
     // create texture
     QuadTexture texture;
     glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -222,11 +247,17 @@ int main()
     int32_t imageWidth;
     int32_t imageHeight;
     int32_t channelCount;
-    uint8_t *imageData = stbi_load("../data/textures/grass_tile.png", &imageWidth, &imageHeight, &channelCount, 0);
+    uint8_t *imageData = stbi_load("../data/textures/texture_atlas.png", &imageWidth, &imageHeight, &channelCount, 0);
     if(imageData)
     {
-        // TODO(speciial): make sure to check the value of channelCount to set either GL_RGB or GL_RGBA 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+        if(channelCount == 3)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+        }
+        else if(channelCount == 4)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+        }
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else 
@@ -236,10 +267,25 @@ int main()
     stbi_image_free(imageData);
 
     // create quad data
-    RGBColor quadColor = {.r = 0.3f, .g = 0.4f, .b = 0.8f};
-    QuadMesh quad = createQuadMesh(10.0f, 10.0f, 64.0f, 64.0f, quadColor);
-    RGBColor anotherQuadColor = {.r = 0.6f, .g = 0.2f, .b = 0.1f};
-    QuadMesh anotherQuad = createQuadMesh(WINDOW_WIDTH - 74.0f, WINDOW_HEIGHT - 74.0f, 64.0f, 64.0f, anotherQuadColor);
+    RGBColor quadColor = {.r = 1.0f, .g = 0.0f, .b = 1.0f};
+
+    QuadMesh *tiles = (QuadMesh*)malloc(15 * 10 * sizeof(QuadMesh));
+    for(int32_t y = 0; y < 10; ++y)
+    {
+        for(int32_t x = 0; x < 15; ++x)
+        {
+            float xPos = (float)x * 64.0f;
+            float yPos = (float)y * 64.0f;
+            if(TILE_MAP[(y * 15) + x] == 0) 
+            {
+                tiles[(y * 15) + x] = createQuadMesh(xPos, yPos, 64.0f, 64.0f, quadColor, GRASS);
+            }
+            else if(TILE_MAP[(y * 15) + x] == 1)
+            {
+                tiles[(y * 15) + x] = createQuadMesh(xPos, yPos, 64.0f, 64.0f, quadColor, ROAD);    
+            }
+        }
+    }
 
     while(!glfwWindowShouldClose(window))
     {
@@ -248,8 +294,10 @@ int main()
         glClearColor(0.015f, 0.140f, 0.140f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        drawQuad(shaderProgram, quad, texture);
-        drawQuad(shaderProgram, anotherQuad, texture);
+        for(int32_t tileIndex = 0; tileIndex < 15 * 10; ++tileIndex)
+        {
+            drawQuad(shaderProgram, tiles[tileIndex], texture);
+        }
 
         glfwSwapBuffers(window);
     }

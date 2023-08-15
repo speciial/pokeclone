@@ -9,5 +9,5 @@ out vec4 fragmentColor;
 
 void main()
 {
-    fragmentColor = texture(uTextureSampler, vTextureCoords) * vec4(vColor, 1.0f);
+    fragmentColor = texture(uTextureSampler, vTextureCoords);
 }
