@@ -10,8 +10,15 @@
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 640
 
-static void readFullFile(const char *fileName, char **fileContent) 
+typedef uint32_t ShaderProgram;
+
+static void 
+readFullFile(char *fileName, char **fileContent) 
 {
+    // STUDY(speciial): what would a good api for reading files look like? should I introduce a 
+    //                  string type and return a value instead of passing in a pointer to write 
+    //                  to? 
+    // TODO(speciial): the file contents are never freed
     char *result;
     FILE *file;
     fopen_s(&file, fileName, "rb");
@@ -27,38 +34,9 @@ static void readFullFile(const char *fileName, char **fileContent)
     *fileContent = result;
 }
 
-int main()
+static ShaderProgram 
+createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
 {
-    if(!glfwInit())
-    {
-        return -1;
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Pokeclone", NULL, NULL);
-    if(!window)
-    {
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-    if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) 
-    {
-        printf("Failed to load glad.");
-    }
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-    // compile shader
-    char *vertexShaderSource = 0;
-    readFullFile("../data/shaders/vertex.glsl", &vertexShaderSource);
-
-    char *fragmentShaderSource = 0;
-    readFullFile("../data/shaders/fragment.glsl", &fragmentShaderSource);
-
     uint32_t vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, 0);
     glCompileShader(vertexShader);
@@ -93,7 +71,52 @@ int main()
         printf("Failed to link shader program:\n %s", infoLog);
     }
 
-    // TODO(speciial): detach and delete shaders
+    glDetachShader(shaderProgram, vertexShader);
+    glDetachShader(shaderProgram, fragmentShader);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+static void 
+createQuadMesh()
+{
+    
+}
+
+int main()
+{
+    if(!glfwInit())
+    {
+        return -1;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Pokeclone", NULL, NULL);
+    if(!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+    if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress)) 
+    {
+        printf("Failed to load glad.");
+    }
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    // compile shader
+    char *vertexShaderSource = 0;
+    readFullFile("../data/shaders/vertex.glsl", &vertexShaderSource);
+    char *fragmentShaderSource = 0;
+    readFullFile("../data/shaders/fragment.glsl", &fragmentShaderSource);
+
+    ShaderProgram shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     // draw quad
     float vertices[] = 
