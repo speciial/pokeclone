@@ -11,6 +11,11 @@
 #define WINDOW_HEIGHT 640
 
 typedef uint32_t ShaderProgram;
+typedef struct 
+{
+    uint32_t vao;
+    uint32_t vertexCount;    
+} QuadMesh;
 
 static void 
 readFullFile(char *fileName, char **fileContent) 
@@ -79,10 +84,47 @@ createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
     return shaderProgram;
 }
 
-static void 
-createQuadMesh()
+static QuadMesh 
+createQuadMesh(float x, float y, float width, float height)
 {
+    float vertices[] = 
+    {
+                x,           y, 0.0f, // bottom left
+        x + width,  y + height, 0.0f, // top right
+                x,  y + height, 0.0f, // top left
     
+                x,           y, 0.0f, // bottom left
+        x + width,           y, 0.0f, // bottom right
+        x + width,  y + height, 0.0f  // top right 
+    };
+
+    uint32_t vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    uint32_t vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    QuadMesh result;
+    result.vao = vao;
+    result.vertexCount = 6;
+    return result;
+}
+
+static void 
+drawQuad(ShaderProgram program, QuadMesh mesh)
+{
+    glUseProgram(program);
+    glBindVertexArray(mesh.vao);
+    glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
 }
 
 int main()
@@ -119,31 +161,8 @@ int main()
     ShaderProgram shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     // draw quad
-    float vertices[] = 
-    {
-        -0.5f, -0.5f, 0.0f, // bottom left
-         0.5f,  0.5f, 0.0f, // top right
-        -0.5f,  0.5f, 0.0f, // top left
-    
-        -0.5f, -0.5f, 0.0f, // bottom left
-         0.5f, -0.5f, 0.0f, // bottom right
-         0.5f,  0.5f, 0.0f  // top right 
-    };
-
-    uint32_t vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    uint32_t vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    QuadMesh quad = createQuadMesh(0.0f, -0.5f, 1.0f, 1.0f);
+    QuadMesh anotherQuad = createQuadMesh(-0.7f, -0.7f, 1.0f, 1.0f);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -152,10 +171,8 @@ int main()
         glClearColor(0.015f, 0.140f, 0.140f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // draw quad
-        glUseProgram(shaderProgram);
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        drawQuad(shaderProgram, quad);
+        drawQuad(shaderProgram, anotherQuad);
 
         glfwSwapBuffers(window);
     }
