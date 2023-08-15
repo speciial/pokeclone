@@ -11,11 +11,19 @@
 #define WINDOW_HEIGHT 640
 
 typedef uint32_t ShaderProgram;
+
 typedef struct 
 {
     uint32_t vao;
     uint32_t vertexCount;    
 } QuadMesh;
+
+typedef struct 
+{
+    float r;
+    float g; 
+    float b;
+} RGBColor;
 
 static void 
 readFullFile(char *fileName, char **fileContent) 
@@ -85,17 +93,17 @@ createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
 }
 
 static QuadMesh 
-createQuadMesh(float x, float y, float width, float height)
+createQuadMesh(float x, float y, float width, float height, RGBColor color)
 {
     float vertices[] = 
     {
-                x,           y, 0.0f, // bottom left
-        x + width,  y + height, 0.0f, // top right
-                x,  y + height, 0.0f, // top left
+                x,           y, 0.0f, color.r, color.g, color.b, // bottom left
+        x + width,  y + height, 0.0f, color.r, color.g, color.b, // top right
+                x,  y + height, 0.0f, color.r, color.g, color.b, // top left
     
-                x,           y, 0.0f, // bottom left
-        x + width,           y, 0.0f, // bottom right
-        x + width,  y + height, 0.0f  // top right 
+                x,           y, 0.0f, color.r, color.g, color.b, // bottom left
+        x + width,           y, 0.0f, color.r, color.g, color.b, // bottom right
+        x + width,  y + height, 0.0f, color.r, color.g, color.b  // top right 
     };
 
     uint32_t vao;
@@ -107,8 +115,14 @@ createQuadMesh(float x, float y, float width, float height)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    // position
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)0);
+
+    // color
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -161,8 +175,10 @@ int main()
     ShaderProgram shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     // draw quad
-    QuadMesh quad = createQuadMesh(0.0f, -0.5f, 1.0f, 1.0f);
-    QuadMesh anotherQuad = createQuadMesh(-0.7f, -0.7f, 1.0f, 1.0f);
+    RGBColor quadColor = {.r = 0.3f, .g = 0.4f, .b = 0.8f};
+    QuadMesh quad = createQuadMesh(0.0f, -0.5f, 1.0f, 1.0f, quadColor);
+    RGBColor anotherQuadColor = {.r = 0.6f, .g = 0.2f, .b = 0.1f};
+    QuadMesh anotherQuad = createQuadMesh(-0.7f, -0.7f, 1.0f, 1.0f, anotherQuadColor);
 
     while(!glfwWindowShouldClose(window))
     {
