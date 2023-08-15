@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define GLAD_GL_IMPLEMENTATION 
 #include <glad/gl.h>
-
 #include <GLFW/glfw3.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 640
@@ -14,6 +17,7 @@ typedef struct
 {
     uint32_t id;
     uint32_t windowDimensionsLocation;
+    uint32_t textureSamplerLocation;
 } ShaderProgram;
 
 typedef struct 
@@ -21,6 +25,8 @@ typedef struct
     uint32_t vao;
     uint32_t vertexCount;    
 } QuadMesh;
+
+typedef uint32_t QuadTexture;
 
 typedef struct 
 {
@@ -95,11 +101,13 @@ createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
 
     glUseProgram(shaderProgram);
     int32_t windowDimensionsLocation = glGetUniformLocation(shaderProgram, "uWindowDimensions");
+    int32_t textureSamplerLocation = glGetUniformLocation(shaderProgram, "uTextureSampler");
     glUseProgram(0);
 
     ShaderProgram result;
     result.id = shaderProgram;
     result.windowDimensionsLocation = windowDimensionsLocation;
+    result.textureSamplerLocation = textureSamplerLocation;
     return result;
 }
 
@@ -114,13 +122,13 @@ createQuadMesh(float x, float y, float width, float height, RGBColor color)
 
     float vertices[] = 
     {
-                x,           y, 0.0f, color.r, color.g, color.b, // bottom left
-        x + width,  y + height, 0.0f, color.r, color.g, color.b, // top right
-                x,  y + height, 0.0f, color.r, color.g, color.b, // top left
+                x,           y, 0.0f, color.r, color.g, color.b, 0.0f, 0.0f, // bottom left
+        x + width,  y + height, 0.0f, color.r, color.g, color.b, 1.0f, 1.0f, // top right
+                x,  y + height, 0.0f, color.r, color.g, color.b, 0.0f, 1.0f, // top left
     
-                x,           y, 0.0f, color.r, color.g, color.b, // bottom left
-        x + width,           y, 0.0f, color.r, color.g, color.b, // bottom right
-        x + width,  y + height, 0.0f, color.r, color.g, color.b  // top right 
+                x,           y, 0.0f, color.r, color.g, color.b, 0.0f, 0.0f, // bottom left
+        x + width,           y, 0.0f, color.r, color.g, color.b, 1.0f, 0.0f, // bottom right
+        x + width,  y + height, 0.0f, color.r, color.g, color.b, 1.0f, 1.0f  // top right 
     };
 
     uint32_t vao;
@@ -134,11 +142,15 @@ createQuadMesh(float x, float y, float width, float height, RGBColor color)
 
     // position
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
 
     // color
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+
+    // uv
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -150,11 +162,15 @@ createQuadMesh(float x, float y, float width, float height, RGBColor color)
 }
 
 static void 
-drawQuad(ShaderProgram program, QuadMesh mesh)
+drawQuad(ShaderProgram program, QuadMesh mesh, QuadTexture texture)
 {
     glUseProgram(program.id);
     glUniform2f(program.windowDimensionsLocation, WINDOW_WIDTH, WINDOW_HEIGHT);
-    
+    glUniform1i(program.textureSamplerLocation, 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
     glBindVertexArray(mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
 }
@@ -192,7 +208,34 @@ int main()
 
     ShaderProgram shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
-    // draw quad
+    // create texture
+    QuadTexture texture;
+    glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    stbi_set_flip_vertically_on_load(true);
+    int32_t imageWidth;
+    int32_t imageHeight;
+    int32_t channelCount;
+    uint8_t *imageData = stbi_load("../data/textures/grass_tile.png", &imageWidth, &imageHeight, &channelCount, 0);
+    if(imageData)
+    {
+        // TODO(speciial): make sure to check the value of channelCount to set either GL_RGB or GL_RGBA 
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else 
+    {
+        printf("Failed to load image");
+    }
+    stbi_image_free(imageData);
+
+    // create quad data
     RGBColor quadColor = {.r = 0.3f, .g = 0.4f, .b = 0.8f};
     QuadMesh quad = createQuadMesh(10.0f, 10.0f, 64.0f, 64.0f, quadColor);
     RGBColor anotherQuadColor = {.r = 0.6f, .g = 0.2f, .b = 0.1f};
@@ -205,8 +248,8 @@ int main()
         glClearColor(0.015f, 0.140f, 0.140f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        drawQuad(shaderProgram, quad);
-        drawQuad(shaderProgram, anotherQuad);
+        drawQuad(shaderProgram, quad, texture);
+        drawQuad(shaderProgram, anotherQuad, texture);
 
         glfwSwapBuffers(window);
     }
