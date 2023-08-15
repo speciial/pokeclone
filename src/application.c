@@ -10,7 +10,11 @@
 #define WINDOW_WIDTH 960
 #define WINDOW_HEIGHT 640
 
-typedef uint32_t ShaderProgram;
+typedef struct
+{
+    uint32_t id;
+    uint32_t windowDimensionsLocation;
+} ShaderProgram;
 
 typedef struct 
 {
@@ -89,12 +93,25 @@ createShaderProgram(char *vertexShaderSource, char *fragmentShaderSource)
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    return shaderProgram;
+    glUseProgram(shaderProgram);
+    int32_t windowDimensionsLocation = glGetUniformLocation(shaderProgram, "uWindowDimensions");
+    glUseProgram(0);
+
+    ShaderProgram result;
+    result.id = shaderProgram;
+    result.windowDimensionsLocation = windowDimensionsLocation;
+    return result;
 }
 
 static QuadMesh 
 createQuadMesh(float x, float y, float width, float height, RGBColor color)
 {
+    // STUDY(speciial): creating new vaos and drawing them individually in separate draw calls
+    //                  is definitely not the most optimal way of rendering 2D quads. It's 
+    //                  probably a good idea to batch the render data into a single draw call.
+    //                  I could either look into how instancing works, or construct the vertex
+    //                  data myself and update it.
+
     float vertices[] = 
     {
                 x,           y, 0.0f, color.r, color.g, color.b, // bottom left
@@ -123,7 +140,6 @@ createQuadMesh(float x, float y, float width, float height, RGBColor color)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 
-
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -136,7 +152,9 @@ createQuadMesh(float x, float y, float width, float height, RGBColor color)
 static void 
 drawQuad(ShaderProgram program, QuadMesh mesh)
 {
-    glUseProgram(program);
+    glUseProgram(program.id);
+    glUniform2f(program.windowDimensionsLocation, WINDOW_WIDTH, WINDOW_HEIGHT);
+    
     glBindVertexArray(mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount);
 }
@@ -176,9 +194,9 @@ int main()
 
     // draw quad
     RGBColor quadColor = {.r = 0.3f, .g = 0.4f, .b = 0.8f};
-    QuadMesh quad = createQuadMesh(0.0f, -0.5f, 1.0f, 1.0f, quadColor);
+    QuadMesh quad = createQuadMesh(10.0f, 10.0f, 64.0f, 64.0f, quadColor);
     RGBColor anotherQuadColor = {.r = 0.6f, .g = 0.2f, .b = 0.1f};
-    QuadMesh anotherQuad = createQuadMesh(-0.7f, -0.7f, 1.0f, 1.0f, anotherQuadColor);
+    QuadMesh anotherQuad = createQuadMesh(WINDOW_WIDTH - 74.0f, WINDOW_HEIGHT - 74.0f, 64.0f, 64.0f, anotherQuadColor);
 
     while(!glfwWindowShouldClose(window))
     {
