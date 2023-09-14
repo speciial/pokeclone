@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define GLAD_GL_IMPLEMENTATION 
-#include <glad/gl.h>
+#include <gl.h>
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -228,9 +228,9 @@ int main()
 
     // compile shader
     char *vertexShaderSource = 0;
-    readFullFile("../data/shaders/vertex.glsl", &vertexShaderSource);
+    readFullFile("data/shaders/vertex.glsl", &vertexShaderSource);
     char *fragmentShaderSource = 0;
-    readFullFile("../data/shaders/fragment.glsl", &fragmentShaderSource);
+    readFullFile("data/shaders/fragment.glsl", &fragmentShaderSource);
 
     ShaderProgram shaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
 
@@ -247,7 +247,7 @@ int main()
     int32_t imageWidth;
     int32_t imageHeight;
     int32_t channelCount;
-    uint8_t *imageData = stbi_load("../data/textures/texture_atlas.png", &imageWidth, &imageHeight, &channelCount, 0);
+    uint8_t *imageData = stbi_load("data/textures/texture_atlas.png", &imageWidth, &imageHeight, &channelCount, 0);
     if(imageData)
     {
         if(channelCount == 3)
