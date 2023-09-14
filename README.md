@@ -22,22 +22,12 @@ Before you can build the actual program, you have to build GLFW which is include
 git clone --recursive git@github.com:speciial/pokeclone.git
 ```
 
-Or (if the you already clone the repo non-recursively) load the submodules with:
+Or (if you already cloned the repo without --recursive) load the submodules with:
 
 ```bash
 git submodule update --init
 ```
 
-### Build the Libraries
-
-To build GLFW open the `third_party` directory in a terminal (with MSVC developer tools enabled so we can use cmake) and navigate to the `GLFW` folder. Here, generate a Visual Studio Solution using CMake with the following command:
-
-```bash
-cmake -S . -B build
-```
-
-In the `build` folder generated inside the `GLFW` directory, there you should find a `GLFW.sln` which you open with Visual Studio. In there set the configuration to `Release` and the Platform to `x64` and build the solution. With this, you should be able to build the application as described in the next section.
-
 ### Build the Program
 
-To keep things simple, this project will only target Windows and use the MSVC compiler. To build the application, simply run the build.bat script in a terminal with the MSVC developer tools enabled (x64 Native Command Tools). This will generate a build folder where the executable (application.exe) can be found.
+The project come pre-configured with a CMakeLists.txt which you can just use to build and run the application. All the created binaries are placed into the `build/bin` directory along with all the resource files. 
