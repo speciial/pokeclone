@@ -16,7 +16,7 @@ As of writing this, I don't really have a "style" of programming in C that I'm c
 
 ### Clone the Repo
 
-Before you can build the actual program, you have to build GLFW which is included as a submodule in the `third_party` directory. So, make sure to either clone this repository recursively like this:
+Before you can build the actual program, you have to make sure GLFW is included as a submodule in the `third_party` directory. So, make sure to either clone this repository recursively like this:
 
 ```bash
 git clone --recursive git@github.com:speciial/pokeclone.git

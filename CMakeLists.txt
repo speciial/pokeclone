@@ -7,7 +7,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin)
 
-# Removing libs that are not needed
+# Removing libs that are not needed. Does not remove windows libs like user32.lib
 set(CMAKE_OPTIMIZE_DEPENDENCIES 1)
 
 # NOTE:
@@ -15,21 +15,9 @@ set(CMAKE_OPTIMIZE_DEPENDENCIES 1)
 #   customize this setup. There is so much about this that's still annoying and the 
 #   compile time isn't all that good either. 
 
-# TODO:
-#   - [x] where do the windows libs come from (ex. gdi32.lib)?
-#           -> Short answer is: you can't really configure that. 
-#           set(CMAKE_OPTIMIZE_DEPENDENCIES 1) apparently helps though. 
-#   - [ ] how do I configure different builds (debug, release, etc.)?
-#   - [ ] will this just work on linux, or do I have to modify things? 
-#   - [x] how do I specify output directories (because it's imposible to find anything here)?
-#   - [x] how do I deal with a data folder? 
-#   - [ ] how do I create a release build? 
-#   - [ ] what do PUBLIC and PRIVATE do?
-#   - [ ] set warning level and warning exceptions (/W4 /WX /wd4244)
-
 # Project Setup
 project("pokeclone")
-add_executable(${PROJECT_NAME} "src/application.c")
+add_executable(${PROJECT_NAME} "src/Application.c" "src/Renderer.c" "src/System.c")
 
 # Resource Folder
 add_custom_target(copy_resources ALL
