@@ -3,6 +3,11 @@
 ## OpenGL
 - [ ] OpenGL Debugging 
 - [ ] Should I allocate triangle memory dynamically?
+- [ ] How do I deal with uniforms that change over time?
+
+## Game Programming
+- [ ] Basic Input Handling
+- [ ] Re-mappable Keys
 
 ## C++
 - [ ] Memory Management 

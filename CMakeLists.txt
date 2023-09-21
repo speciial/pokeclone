@@ -17,7 +17,7 @@ set(CMAKE_OPTIMIZE_DEPENDENCIES 1)
 
 # Project Setup
 project("pokeclone")
-add_executable(${PROJECT_NAME} "src/Application.c" "src/Renderer.c" "src/System.c")
+add_executable(${PROJECT_NAME} "src/Application.c" "src/Renderer.c" "src/System.c" "src/Input.c")
 
 # Resource Folder
 add_custom_target(copy_resources ALL
