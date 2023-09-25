@@ -12,6 +12,9 @@
 ## C++
 - [ ] Memory Management 
 
+## Maths 
+- [ ] why shouldn't you compare two floats? (epsilon)
+
 ## cmake
 - [ ] where do the windows libs come from (ex. gdi32.lib)?
 - [ ] How do I configure different builds (debug, release, etc.)?

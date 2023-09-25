@@ -105,4 +105,9 @@ static inline Vec4f Vec4fNormalize(Vec4f v)
     return Vec4fInit((v.x / magnitude), (v.y / magnitude), (v.z / magnitude), (v.w / magnitude));
 }
 
+static inline float Lerp(float v0, float v1, float t) 
+{
+    return (1 - t) * v0 + t * v1;
+}
+
 #endif /* MATHS_H */

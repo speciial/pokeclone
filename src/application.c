@@ -37,36 +37,127 @@ typedef struct
     float deltaTimeInSeconds;
 
     float playerSpeed;
+    bool isInTransition;
+    float transitionTime;
+    Vec2f transitionMoveBy;
     Vec2f playerPosition;
+    Vec2f relativeWorldPosition;
+    Vec2i playerOrientation;
 
     Vec2f mousePosition;
 } GameData;
 
 void updateGame(GameData* gameData, InputData* inputData)
 {
-    Vec2f playerDirection = Vec2fInit(0, 0);
-    if (inputData->buttons[KEY_A].isDown)
+    // Player Movement:
+    //  - if a button is pressed, start a transition
+    //      - if the player has the right orientation, move the background in the opposite direction
+    //      - if the player has the wrong orientation, turn the player
+
+    float timeToFinishTransition = 0.2f;
+
+    if (!gameData->isInTransition)
     {
-        playerDirection.x = -1; 
-    }
-    if (inputData->buttons[KEY_S].isDown)
-    {
-        playerDirection.y = -1; 
-    }
-    if (inputData->buttons[KEY_D].isDown)
-    {
-        playerDirection.x = 1; 
-    }
-    if (inputData->buttons[KEY_W].isDown)
-    {
-        playerDirection.y = 1; 
+        if (inputData->buttons[KEY_A].isDown)
+        {
+            // check if the player has the right orientation 
+            if (gameData->playerOrientation.x == -1 && gameData->playerOrientation.y == 0)
+            {
+                // start the transition
+                gameData->isInTransition = true;
+                gameData->transitionTime = 0.0f;
+            }
+            else 
+            {
+                // update player orientation
+                // TODO(speciial): there is a small transition happening when the player is turning
+                gameData->playerOrientation.x = -1;
+                gameData->playerOrientation.y = 0;
+            }
+        }
+        if (inputData->buttons[KEY_S].isDown)
+        {
+            // check if the player has the right orientation 
+            if (gameData->playerOrientation.x == 0 && gameData->playerOrientation.y == -1)
+            {
+                // start the transition
+                gameData->isInTransition = true;
+                gameData->transitionTime = 0.0f;
+            }
+            else 
+            {
+                // update player orientation
+                // TODO(speciial): there is a small transition happening when the player is turning
+                gameData->playerOrientation.x = 0;
+                gameData->playerOrientation.y = -1;
+            }
+        }
+        if (inputData->buttons[KEY_D].isDown)
+        {
+            // check if the player has the right orientation 
+            if (gameData->playerOrientation.x == 1 && gameData->playerOrientation.y == 0)
+            {
+                // start the transition
+                gameData->isInTransition = true;
+                gameData->transitionTime = 0.0f;
+            }
+            else 
+            {
+                // update player orientation
+                // TODO(speciial): there is a small transition happening when the player is turning
+                gameData->playerOrientation.x = 1;
+                gameData->playerOrientation.y = 0;
+            }
+        }
+        if (inputData->buttons[KEY_W].isDown)
+        {
+            // check if the player has the right orientation 
+            if (gameData->playerOrientation.x == 0 && gameData->playerOrientation.y == 1)
+            {
+                // start the transition
+                gameData->isInTransition = true;
+                gameData->transitionTime = 0.0f;
+            }
+            else 
+            {
+                // update player orientation
+                // TODO(speciial): there is a small transition happening when the player is turning
+                gameData->playerOrientation.x = 0;
+                gameData->playerOrientation.y = 1;
+            }
+        }
     }
 
-    if (playerDirection.x != 0 || playerDirection.y != 0)
+    if (gameData->isInTransition)
     {
-        playerDirection = Vec2fNormalize(playerDirection);
-        gameData->playerPosition = Vec2fAdd(gameData->playerPosition, 
-                                            Vec2fScale(playerDirection, gameData->playerSpeed * gameData->deltaTimeInSeconds));
+        if (gameData->transitionTime <= timeToFinishTransition)
+        {
+            float transitionFactor = 1 / timeToFinishTransition;
+            if (gameData->playerOrientation.x != 0)
+            {
+                float transitionFactor = 1 / timeToFinishTransition;
+                gameData->transitionMoveBy.x = -1.0f * gameData->playerOrientation.x * Lerp(0.0f, 64.0f, gameData->transitionTime * transitionFactor); 
+            } 
+            else if (gameData->playerOrientation.y != 0)
+            {
+                gameData->transitionMoveBy.y = -1.0f * gameData->playerOrientation.y * Lerp(0.0f, 64.0f, gameData->transitionTime * transitionFactor);
+            }
+        
+            gameData->transitionTime += gameData->deltaTimeInSeconds;
+        } 
+        else
+        {
+            // TODO(speciial): potentially correct the final position of the palyer?
+            gameData->isInTransition = false;
+
+            // NOTE(speciial): we need to flip the orienation because the world is moving in the 
+            //                 opposite direction of the player
+            gameData->relativeWorldPosition.x += -1.0f * gameData->playerOrientation.x * 64.0f;
+            gameData->relativeWorldPosition.y += -1.0f * gameData->playerOrientation.y * 64.0f;
+
+            gameData->transitionMoveBy.x = 0;
+            gameData->transitionMoveBy.y = 0;
+        } 
     }
 
     gameData->mousePosition = Vec2fInit(inputData->mousePosition.x, WINDOW_HEIGHT - inputData->mousePosition.y);
@@ -103,8 +194,10 @@ int main()
 
     GameData gameData = {0};
     gameData.playerSpeed = 200;
-    gameData.playerPosition.x = 64;
-    gameData.playerPosition.y = 64;
+    gameData.isInTransition = false;
+    gameData.playerPosition = Vec2fInit(64*7, 64*4);
+    gameData.playerOrientation.x = 0;
+    gameData.playerOrientation.y = 1;
 
     RenderData renderData;
     RendererInit(&renderData, Vec2fInit(WINDOW_WIDTH, WINDOW_HEIGHT));
@@ -137,15 +230,17 @@ int main()
         {
             for(int32_t x = 0; x < 15; x++)
             {
-                float xPos = (float)x * 64.0f;
-                float yPos = (float)y * 64.0f;
+                float xPos = (float)x * 64.0f + gameData.relativeWorldPosition.x;
+                float yPos = (float)y * 64.0f + gameData.relativeWorldPosition.y;
                 if(TILE_MAP[((9 - y) * 15) + x] == 0) 
                 {
                     // RendererPushColoredQuad(&renderData, 
                     //                         RectInit(xPos, (WINDOW_HEIGHT - yPos - 64.0f), 64.0f, 64.0f), 
                     //                         blue);
                     RendererPushTexturedQuad(&renderData, 
-                                             RectInit(xPos, yPos, 64.0f, 64.0f),
+                                             RectInit(xPos + gameData.transitionMoveBy.x, 
+                                                      yPos + gameData.transitionMoveBy.y, 
+                                                      64.0f, 64.0f),
                                              white, grassTexture);
                 }
                 else if(TILE_MAP[((9 - y) * 15) + x] == 1)
@@ -154,7 +249,9 @@ int main()
                     //                         RectInit(xPos, (WINDOW_HEIGHT - yPos - 64.0f), 64.0f, 64.0f),
                     //                         red);
                     RendererPushSubTexturedQuad(&renderData, 
-                                                RectInit(xPos, yPos, 64.0f, 64.0f),
+                                                RectInit(xPos + gameData.transitionMoveBy.x, 
+                                                         yPos + gameData.transitionMoveBy.y, 
+                                                         64.0f, 64.0f),
                                                 RectInit(0.1f, 0.0f, 0.1f, 0.1f),
                                                 white, textureAtlas);    
                 }
