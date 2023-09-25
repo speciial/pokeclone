@@ -98,7 +98,8 @@ int main()
     glfwSwapInterval(1);
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    InputInit(window);
+    InputData inputData = {0};
+    InputInit(window, &inputData);
 
     GameData gameData = {0};
     gameData.playerSpeed = 200;
@@ -116,7 +117,6 @@ int main()
     
     while(!glfwWindowShouldClose(window))
     {
-        InputData inputData = GetInputData();
         updateGame(&gameData, &inputData);
         
         RendererBeginFrame(&renderData);

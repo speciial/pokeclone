@@ -6,7 +6,7 @@
 - [ ] How do I deal with uniforms that change over time?
 
 ## Game Programming
-- [ ] Basic Input Handling
+- [x] Basic Input Handling
 - [ ] Re-mappable Keys
 
 ## C++

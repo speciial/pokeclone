@@ -27,18 +27,14 @@ typedef struct
     Button buttons[6];
 } InputData;
 
-InputData inputData;
-
-static inline InputData GetInputData() { return inputData; }
-
-void InputInit(GLFWwindow *window);
-
-void UpdateKey(KeyCode key, int action);
+void InputInit(GLFWwindow *window, InputData *inputData);
 
 void MousePositionCallback(GLFWwindow* window, double xpos, double ypos);
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
 void KeyInputCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+void UpdateKey(InputData *inputData, KeyCode key, int action);
 
 #endif /* INPUT_H */
