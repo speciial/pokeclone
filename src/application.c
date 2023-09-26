@@ -36,7 +36,7 @@ typedef struct
 {
     float deltaTimeInSeconds;
 
-    float playerSpeed;
+    float playerPixelsPerSecond;
     bool isInTransition;
     float transitionTime;
     Vec2f transitionMoveBy;
@@ -54,7 +54,19 @@ void updateGame(GameData* gameData, InputData* inputData)
     //      - if the player has the right orientation, move the background in the opposite direction
     //      - if the player has the wrong orientation, turn the player
 
-    float timeToFinishTransition = 0.2f;
+    // Idea to remove the little skip at the end of a transition
+    //  - instead of checking if a certain time as elapsed, check if a certain distance is traveld
+    //  - if the distance is further than what is allowed, clip it to the allowed distance
+
+    // Scratch this idea, let's try this one from a gamedev.stackexchange
+    //  - instead of checking if the player has moved the right amount, let's just clamp the transition factor to 1
+
+    // OK, I think we are just skipping a frame. The distance to travel seems to be pretty consistend across time.
+
+    // Yep, we skipped a frame because we calculated the transitionTime in the wrong place. It needs to be calculated
+    // before we start moving, because we want to start moving right on the button press.
+
+    // float timeToFinishTransition = 0.2f;
 
     if (!gameData->isInTransition)
     {
@@ -130,25 +142,27 @@ void updateGame(GameData* gameData, InputData* inputData)
 
     if (gameData->isInTransition)
     {
-        if (gameData->transitionTime <= timeToFinishTransition)
+        float maxTravelDistance = 64.0f;
+        gameData->transitionTime += gameData->deltaTimeInSeconds;
+
+        float pixelsPerSecond = gameData->playerPixelsPerSecond;
+        float pixelsToTravel = gameData->transitionTime * pixelsPerSecond;
+        float relativeDistanceToTravel = MinValuef(pixelsToTravel / maxTravelDistance, 1.0f);
+
+        if (gameData->playerOrientation.x != 0)
         {
-            float transitionFactor = 1 / timeToFinishTransition;
-            if (gameData->playerOrientation.x != 0)
-            {
-                float transitionFactor = 1 / timeToFinishTransition;
-                gameData->transitionMoveBy.x = -1.0f * gameData->playerOrientation.x * Lerp(0.0f, 64.0f, gameData->transitionTime * transitionFactor); 
-            } 
-            else if (gameData->playerOrientation.y != 0)
-            {
-                gameData->transitionMoveBy.y = -1.0f * gameData->playerOrientation.y * Lerp(0.0f, 64.0f, gameData->transitionTime * transitionFactor);
-            }
-        
-            gameData->transitionTime += gameData->deltaTimeInSeconds;
+            gameData->transitionMoveBy.x = -1.0f * gameData->playerOrientation.x * Lerp(0.0f, maxTravelDistance, relativeDistanceToTravel); 
         } 
-        else
+        else if (gameData->playerOrientation.y != 0)
         {
-            // TODO(speciial): potentially correct the final position of the palyer?
+            gameData->transitionMoveBy.y = -1.0f * gameData->playerOrientation.y * Lerp(0.0f, maxTravelDistance, relativeDistanceToTravel);
+        }
+    
+        // TODO(speciial): don't check for qte but rather use the difference between max and current value and check against epsilon.  
+        if (AbsoluteValuef(gameData->transitionMoveBy.x) >= maxTravelDistance || AbsoluteValuef(gameData->transitionMoveBy.y) >= maxTravelDistance)
+        {
             gameData->isInTransition = false;
+            gameData->transitionTime = 0;
 
             // NOTE(speciial): we need to flip the orienation because the world is moving in the 
             //                 opposite direction of the player
@@ -193,7 +207,7 @@ int main()
     InputInit(window, &inputData);
 
     GameData gameData = {0};
-    gameData.playerSpeed = 200;
+    gameData.playerPixelsPerSecond = 256.0f;
     gameData.isInTransition = false;
     gameData.playerPosition = Vec2fInit(64*7, 64*4);
     gameData.playerOrientation.x = 0;

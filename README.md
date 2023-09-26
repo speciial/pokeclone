@@ -6,7 +6,7 @@ Pokeclone is a small project where I implement a Pokemon (specifically the FireR
 
 The original resolution of the GBA is 240x160 pixels. For a regular HD screen, this is a little to small so the clone will be scaled up by a factore of 4. This means the window is now 960x640 pixel, a block is 64x64 pixel, and a tile is 32x32 pixel. 
 
-Currently, the goal is to rebuild the game, so other than upscaling the resolution, things should look and feel like in the original game. For recreating the textures and maps [Serebii.net's Pokearth](www.serebii.net/pokearth/) seems like a great resource.  
+Currently, the goal is to rebuild the game, so other than upscaling the resolution, things should look and feel like in the original game. For recreating the textures and maps [Serebii.net's Pokearth](https://www.serebii.net/pokearth/) seems like a great resource. For character animation and other sprites and images [the spriters resource](https://www.spriters-resource.com/game_boy_advance/pokemonfireredleafgreen) has a lot of stuff.
 
 ## About the Code
 
